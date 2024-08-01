@@ -1,0 +1,12 @@
+﻿namespace ShippingApi.Models
+{
+    public class Driver
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "Simphiwe";
+        public string Email { get; set; }
+        public int DriverNumber { get; set; }
+        public string Team { get; set; }
+        public Address Address { get; set; }
+    }
+}
