@@ -4,8 +4,10 @@ namespace ShippingApi.UseCase
 {
     public interface IOrderRepository
     {
-        IEnumerable<Order> GetOrders();
-        Order GetOrderById(int orderId);
-        void AddOrder(Order order);
+        Task<IEnumerable<Order>> GetOrdersAsync();
+        Task<Order?> GetOrderByIdAsync(int orderId);
+        Task AddOrderAsync(Order order);
+        Task UpdateOrderAsync(Order order);
+        Task DeleteOrderAsync(int orderId);
     }
 }

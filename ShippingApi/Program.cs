@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using ShippingApi.Core;
 using ShippingApi.Data;
+using ShippingApi.Services;
+using ShippingApi.UseCase;
+using ShippingApi.UseCase.Repository;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -20,6 +23,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
 
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+// Order dependencies
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<IOrderService>(provider =>
+{
+    var orderService = provider.GetRequiredService<OrderService>();
+    return new LoggingServiceDecorator(orderService);
+});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -46,6 +58,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
