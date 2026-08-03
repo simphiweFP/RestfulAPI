@@ -23,29 +23,34 @@ namespace ShippingApi.Services
             return _orderService.GetUserOrders(userId);
         }
 
-        public object GetOrderById(int id)
+        public async Task<Order?> GetOrderByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Retrieving order with ID {id}");
+            return await _orderService.GetOrderByIdAsync(id);
         }
 
-        public object GetOrders()
+        public async Task<IEnumerable<Order>> GetOrdersAsync()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Retrieving all orders");
+            return await _orderService.GetOrdersAsync();
         }
 
-        public void AddOrder(Order order)
+        public async Task AddOrderAsync(Order order)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Adding order for user with ID {order.UserId}");
+            await _orderService.AddOrderAsync(order);
         }
 
-        public void UpdateOrder(Order order)
+        public async Task UpdateOrderAsync(Order order)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Updating order with ID {order.Id}");
+            await _orderService.UpdateOrderAsync(order);
         }
 
-        public void DeleteOrder(int id)
+        public async Task DeleteOrderAsync(int id)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Deleting order with ID {id}");
+            await _orderService.DeleteOrderAsync(id);
         }
     }
 }

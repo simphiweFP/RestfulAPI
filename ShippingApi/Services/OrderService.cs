@@ -1,58 +1,58 @@
-﻿using Microsoft.EntityFrameworkCore;
-using ShippingApi.Models;
+﻿using ShippingApi.Models;
 using ShippingApi.Services;
 using ShippingApi.UseCase;
 
-public class OrderService : IOrderService  
-
+namespace ShippingApi.Services
 {
-    private readonly IOrderRepository _orderRepository;
-
-    public OrderService(IOrderRepository orderRepository)
+    public class OrderService : IOrderService
     {
-        _orderRepository = orderRepository;
-    }
+        private readonly IOrderRepository _orderRepository;
 
-    public void PlaceOrder(int userId, IEnumerable<Item> items)
-    {
-        var order = new Order
+        public OrderService(IOrderRepository orderRepository)
         {
-            UserId = userId,
-            Items = items.ToList(), 
-            TotalAmount = items.Sum(i => i.Price) 
-        };
+            _orderRepository = orderRepository;
+        }
 
-        _orderRepository.AddOrder(order);
-    }
+        public void PlaceOrder(int userId, IEnumerable<Item> items)
+        {
+            var order = new Order
+            {
+                UserId = userId,
+                Items = items.ToList(),
+                TotalAmount = items.Sum(i => i.Price)
+            };
 
-    public IEnumerable<Order> GetUserOrders(int userId)
-    {
-       return _orderRepository.GetOrders().Where(o => o.UserId == userId);
-    }
+            _orderRepository.AddOrderAsync(order).Wait();
+        }
 
-    public object GetOrderById(int id)
-    {
-        return _orderRepository.GetOrders().Where(o => o.Id== id);
+        public IEnumerable<Order> GetUserOrders(int userId)
+        {
+            return _orderRepository.GetOrdersAsync().Result.Where(o => o.UserId == userId);
+        }
 
-    }
+        public async Task<Order?> GetOrderByIdAsync(int id)
+        {
+            return await _orderRepository.GetOrderByIdAsync(id);
+        }
 
-    public object GetOrders()
-    {
-        return _orderRepository.GetOrders().ToList();
-    }
+        public async Task<IEnumerable<Order>> GetOrdersAsync()
+        {
+            return await _orderRepository.GetOrdersAsync();
+        }
 
-    public void AddOrder(Order order)
-    {
-        throw new NotImplementedException();
-    }
+        public async Task AddOrderAsync(Order order)
+        {
+            await _orderRepository.AddOrderAsync(order);
+        }
 
-    public void UpdateOrder(Order order)
-    {
-        throw new NotImplementedException();
-    }
+        public async Task UpdateOrderAsync(Order order)
+        {
+            await _orderRepository.UpdateOrderAsync(order);
+        }
 
-    public void DeleteOrder(int id)
-    {
-        throw new NotImplementedException();
+        public async Task DeleteOrderAsync(int id)
+        {
+            await _orderRepository.DeleteOrderAsync(id);
+        }
     }
 }
