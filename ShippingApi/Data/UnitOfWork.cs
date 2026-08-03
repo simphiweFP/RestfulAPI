@@ -15,10 +15,10 @@ namespace ShippingApi.Data
 
         public UnitOfWork(ApplicationDbContext context, ILoggerFactory loggerFactory)
         {
-
             _context = context;
-            var _logger = loggerFactory.CreateLogger(categoryName: "logs");
-            Drivers = new DriverRepository(_context, _logger);
+            var logger = loggerFactory.CreateLogger(categoryName: "logs");
+            Drivers = new DriverRepository(_context, logger);
+            Address = new AddressRepository(_context, logger);
         }
 
         public async Task CompleteAsync()
