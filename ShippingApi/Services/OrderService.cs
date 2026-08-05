@@ -13,7 +13,7 @@ namespace ShippingApi.Services
             _orderRepository = orderRepository;
         }
 
-        public void PlaceOrder(int userId, IEnumerable<Item> items)
+        public async Task PlaceOrderAsync(int userId, IEnumerable<Item> items, CancellationToken cancellationToken = default)
         {
             var order = new Order
             {
@@ -22,37 +22,38 @@ namespace ShippingApi.Services
                 TotalAmount = items.Sum(i => i.Price)
             };
 
-            _orderRepository.AddOrderAsync(order).Wait();
+            await _orderRepository.AddOrderAsync(order, cancellationToken);
         }
 
-        public IEnumerable<Order> GetUserOrders(int userId)
+        public async Task<IEnumerable<Order>> GetUserOrdersAsync(int userId, CancellationToken cancellationToken = default)
         {
-            return _orderRepository.GetOrdersAsync().Result.Where(o => o.UserId == userId);
+            var orders = await _orderRepository.GetOrdersAsync(cancellationToken);
+            return orders.Where(o => o.UserId == userId);
         }
 
-        public async Task<Order?> GetOrderByIdAsync(int id)
+        public async Task<Order?> GetOrderByIdAsync(int id, CancellationToken cancellationToken = default)
         {
-            return await _orderRepository.GetOrderByIdAsync(id);
+            return await _orderRepository.GetOrderByIdAsync(id, cancellationToken);
         }
 
-        public async Task<IEnumerable<Order>> GetOrdersAsync()
+        public async Task<IEnumerable<Order>> GetOrdersAsync(CancellationToken cancellationToken = default)
         {
-            return await _orderRepository.GetOrdersAsync();
+            return await _orderRepository.GetOrdersAsync(cancellationToken);
         }
 
-        public async Task AddOrderAsync(Order order)
+        public async Task AddOrderAsync(Order order, CancellationToken cancellationToken = default)
         {
-            await _orderRepository.AddOrderAsync(order);
+            await _orderRepository.AddOrderAsync(order, cancellationToken);
         }
 
-        public async Task UpdateOrderAsync(Order order)
+        public async Task UpdateOrderAsync(Order order, CancellationToken cancellationToken = default)
         {
-            await _orderRepository.UpdateOrderAsync(order);
+            await _orderRepository.UpdateOrderAsync(order, cancellationToken);
         }
 
-        public async Task DeleteOrderAsync(int id)
+        public async Task DeleteOrderAsync(int id, CancellationToken cancellationToken = default)
         {
-            await _orderRepository.DeleteOrderAsync(id);
+            await _orderRepository.DeleteOrderAsync(id, cancellationToken);
         }
     }
 }
