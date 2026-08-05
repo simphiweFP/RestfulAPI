@@ -1,87 +1,86 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ShippingApi.Data;
-using ShippingApi.Models;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShippingApi.Core;
-using System.Runtime.CompilerServices;
-
+using ShippingApi.Dtos.Driver;
+using ShippingApi.Dtos.Mapping;
 
 namespace ShippingApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
-    public class DriversController : Controller
+    [Route("api/drivers")]
+    public class DriversController : ControllerBase
     {
-      
         private readonly IUnitOfWork _unitOfWork;
 
-        public DriversController(IUnitOfWork unitOfWork) //Contrator
+        public DriversController(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork;// Dependency
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<ActionResult<IEnumerable<DriverResponse>>> GetDrivers(CancellationToken cancellationToken)
         {
-            return Ok(await _unitOfWork.Drivers.All());
+            var drivers = await _unitOfWork.Drivers.All(cancellationToken);
+            return Ok(drivers.Select(d => d.ToResponse()));
         }
 
-        [HttpGet]
-        [Route(template: "GetById")]
-        public async Task<IActionResult> Get(int id)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<DriverResponse>> GetDriver(int id, CancellationToken cancellationToken)
         {
-            var driver = await _unitOfWork.Drivers.FindById(id);
-            LogMessage($"Retrieving driver with ID {id}");
-            return Ok(driver);
+            var driver = await _unitOfWork.Drivers.FindById(id, cancellationToken);
+            if (driver == null)
+            {
+                return NotFound();
+            }
+            return Ok(driver.ToResponse());
         }
 
         [HttpPost]
-        [Route(template: "AddDriver")]
-        public async Task<IActionResult> AddDriver(Driver driver)
+        public async Task<ActionResult<DriverResponse>> CreateDriver(CreateDriverRequest request, CancellationToken cancellationToken)
         {
-            await _unitOfWork.Drivers.Add(driver);
+            var driver = request.ToModel();
+            await _unitOfWork.Drivers.Add(driver, cancellationToken);
             await _unitOfWork.CompleteAsync();
-            return Ok();
+
+            return CreatedAtAction(nameof(GetDriver), new { id = driver.Id }, driver.ToResponse());
         }
 
-        [HttpDelete]
-        [Route(template: "DeleteDriver")]
-        public async Task<IActionResult> DeleteDriver(int id)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateDriver(int id, UpdateDriverRequest request, CancellationToken cancellationToken)
         {
-            var driver = await _unitOfWork.Drivers.FindById(id);
-            if (driver != null)
+            if (id != request.Id)
             {
-                await _unitOfWork.Drivers.Delete(driver);
-                await _unitOfWork.CompleteAsync();
-                return NoContent();
-
+                return BadRequest();
             }
-            return NotFound();
-        }
 
-        [HttpPatch]
-        [Route(template: "UpdateDriver")]
-        public async Task<IActionResult> UpdateDriver(Driver driver)
-        {
-            var existDriver = await _unitOfWork.Drivers.FindById(driver.Id);
-
-            if (existDriver != null)
+            var existingDriver = await _unitOfWork.Drivers.FindById(id, cancellationToken);
+            if (existingDriver == null)
             {
-
-                await _unitOfWork.Drivers.Update(driver);
-                await _unitOfWork.CompleteAsync();
-                return Ok();
+                return NotFound();
             }
-            return NotFound();
 
+            var driver = request.ToModel();
+            await _unitOfWork.Drivers.Update(driver, cancellationToken);
+            await _unitOfWork.CompleteAsync();
+
+            return NoContent();
         }
-        private void LogMessage(string message,
-                                [CallerMemberName] string methodName = "",
-                                [CallerFilePath] string sourceFilePath = "",
-                                [CallerLineNumber] int sourceLineNumber = 0)
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteDriver(int id, CancellationToken cancellationToken)
         {
-            Console.WriteLine($"Method: {methodName}, File: {sourceFilePath}, Line: {sourceLineNumber}, Message: {message}");
+            var driver = await _unitOfWork.Drivers.FindById(id, cancellationToken);
+            if (driver == null)
+            {
+                return NotFound();
+            }
+
+            await _unitOfWork.Drivers.Delete(driver, cancellationToken);
+            await _unitOfWork.CompleteAsync();
+
+            return NoContent();
         }
     }
-    }
-
+}
 

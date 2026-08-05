@@ -1,13 +1,14 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ShippingApi.Models;
+using ShippingApi.Dtos.Mapping;
+using ShippingApi.Dtos.Order;
 using ShippingApi.Services;
 
 namespace ShippingApi.Controllers
 {
-    // Controllers
+    [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/orders")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -17,59 +18,64 @@ namespace ShippingApi.Controllers
             _orderService = orderService;
         }
 
-        // GET: api/Order
         [HttpGet]
-        public async Task<IActionResult> GetOrders()
+        public async Task<ActionResult<IEnumerable<OrderResponse>>> GetOrders(CancellationToken cancellationToken)
         {
-            var orders = await _orderService.GetOrdersAsync();
-            return Ok(orders);
+            var orders = await _orderService.GetOrdersAsync(cancellationToken);
+            return Ok(orders.Select(o => o.ToResponse()));
         }
 
-        // GET: api/Order/5
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetOrder(int id)
+        public async Task<ActionResult<OrderResponse>> GetOrder(int id, CancellationToken cancellationToken)
         {
-            var order = await _orderService.GetOrderByIdAsync(id);
+            var order = await _orderService.GetOrderByIdAsync(id, cancellationToken);
             if (order == null)
             {
                 return NotFound();
             }
-            return Ok(order);
+            return Ok(order.ToResponse());
         }
 
-        // POST: api/Order
         [HttpPost]
-        public async Task<IActionResult> PostOrder([FromBody] Order order)
+        public async Task<ActionResult<OrderResponse>> CreateOrder(CreateOrderRequest request, CancellationToken cancellationToken)
         {
-            await _orderService.AddOrderAsync(order);
-            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order);
+            var order = request.ToModel();
+            await _orderService.AddOrderAsync(order, cancellationToken);
+
+            return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, order.ToResponse());
         }
 
-        // PUT: api/Order/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrder(int id, [FromBody] Order order)
+        public async Task<IActionResult> UpdateOrder(int id, UpdateOrderRequest request, CancellationToken cancellationToken)
         {
-            if (id != order.Id)
+            if (id != request.Id)
             {
                 return BadRequest();
             }
-            await _orderService.UpdateOrderAsync(order);
-            return NoContent();
-        }
 
-        // DELETE: api/Order/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrder(int id)
-        {
-            var existingOrder = await _orderService.GetOrderByIdAsync(id);
+            var existingOrder = await _orderService.GetOrderByIdAsync(id, cancellationToken);
             if (existingOrder == null)
             {
                 return NotFound();
             }
-            await _orderService.DeleteOrderAsync(id);
+
+            var order = request.ToModel();
+            await _orderService.UpdateOrderAsync(order, cancellationToken);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteOrder(int id, CancellationToken cancellationToken)
+        {
+            var existingOrder = await _orderService.GetOrderByIdAsync(id, cancellationToken);
+            if (existingOrder == null)
+            {
+                return NotFound();
+            }
+
+            await _orderService.DeleteOrderAsync(id, cancellationToken);
             return NoContent();
         }
     }
-
 }
 

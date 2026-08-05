@@ -1,79 +1,86 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ShippingApi.Data;
-using ShippingApi.Models;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShippingApi.Core;
-
+using ShippingApi.Dtos.Address;
+using ShippingApi.Dtos.Mapping;
 
 namespace ShippingApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
-    public class AddressController : Controller
+    [Route("api/addresses")]
+    public class AddressController : ControllerBase
     {
-      
         private readonly IUnitOfWork _unitOfWork;
 
-        public AddressController(IUnitOfWork unitOfWork) //Contrator
+        public AddressController(IUnitOfWork unitOfWork)
         {
-            _unitOfWork = unitOfWork;// Dependency
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
-        [Route(template: "GetAddress")]
-        public async Task<IActionResult> GetAddress()
+        public async Task<ActionResult<IEnumerable<AddressResponse>>> GetAddresses(CancellationToken cancellationToken)
         {
-            return Ok(await _unitOfWork.Address.All());
+            var addresses = await _unitOfWork.Address.All(cancellationToken);
+            return Ok(addresses.Select(a => a.ToResponse()));
         }
 
-        [HttpGet]
-        [Route(template: "GetAddressById")]
-        public async Task<IActionResult> GetAddressById(int id)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<AddressResponse>> GetAddress(int id, CancellationToken cancellationToken)
         {
-            var driver = await _unitOfWork.Address.FindById(id);
-            return Ok(driver);
+            var address = await _unitOfWork.Address.FindById(id, cancellationToken);
+            if (address == null)
+            {
+                return NotFound();
+            }
+            return Ok(address.ToResponse());
         }
 
         [HttpPost]
-        [Route(template: "AddAddress")]
-        public async Task<IActionResult> AddAddress(Address address)
+        public async Task<ActionResult<AddressResponse>> CreateAddress(CreateAddressRequest request, CancellationToken cancellationToken)
         {
-            await _unitOfWork.Address.Add(address);
+            var address = request.ToModel();
+            await _unitOfWork.Address.Add(address, cancellationToken);
             await _unitOfWork.CompleteAsync();
-            return Ok();
+
+            return CreatedAtAction(nameof(GetAddress), new { id = address.Id }, address.ToResponse());
         }
 
-        [HttpDelete]
-        [Route(template: "DeleteAddress")]
-        public async Task<IActionResult> DeleteAddress(int id)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAddress(int id, UpdateAddressRequest request, CancellationToken cancellationToken)
         {
-            var address = await _unitOfWork.Address.FindById(id);
-            if (address != null)
+            if (id != request.Id)
             {
-                await _unitOfWork.Address.Delete(address);
-                await _unitOfWork.CompleteAsync();
-                return NoContent();
-
+                return BadRequest();
             }
-            return NotFound();
+
+            var existingAddress = await _unitOfWork.Address.FindById(id, cancellationToken);
+            if (existingAddress == null)
+            {
+                return NotFound();
+            }
+
+            var address = request.ToModel();
+            await _unitOfWork.Address.Update(address, cancellationToken);
+            await _unitOfWork.CompleteAsync();
+
+            return NoContent();
         }
 
-        [HttpPatch]
-        [Route(template: "UpdateAddress")]
-        public async Task<IActionResult> UpdateAddress(Address address)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAddress(int id, CancellationToken cancellationToken)
         {
-            var existDriver = await _unitOfWork.Address.FindById(address.Id);
-
-            if (existDriver != null)
+            var address = await _unitOfWork.Address.FindById(id, cancellationToken);
+            if (address == null)
             {
-
-                await _unitOfWork.Address.Update(address);
-                await _unitOfWork.CompleteAsync();
-                return Ok();
+                return NotFound();
             }
-            return NotFound();
 
+            await _unitOfWork.Address.Delete(address, cancellationToken);
+            await _unitOfWork.CompleteAsync();
+
+            return NoContent();
         }
-      }
     }
-
+}
 
