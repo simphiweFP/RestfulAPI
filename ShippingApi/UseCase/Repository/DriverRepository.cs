@@ -10,11 +10,11 @@ namespace ShippingApi.Core.Repository
             {
             }
 
-            public override async Task<IEnumerable<Driver>> All()
+            public override async Task<IEnumerable<Driver>> All(CancellationToken cancellationToken = default)
             {
                 try
                 {
-                    return await _context.Drivers.Where(x => x.Id < 100).ToListAsync();
+                    return await _context.Drivers.Where(x => x.Id < 100).ToListAsync(cancellationToken);
                 }
                 catch (Exception e)
                 {
@@ -23,11 +23,11 @@ namespace ShippingApi.Core.Repository
                 }
             }
 
-            public async Task<Driver?> GetDriverByNumber(int driverNumber)
+            public async Task<Driver?> GetDriverByNumber(int driverNumber, CancellationToken cancellationToken = default)
             {
                 try
                 {
-                    return await _context.Drivers.FirstOrDefaultAsync(x => x.DriverNumber == driverNumber);
+                    return await _context.Drivers.FirstOrDefaultAsync(x => x.DriverNumber == driverNumber, cancellationToken);
                 }
                 catch (Exception e)
                 {
@@ -36,14 +36,13 @@ namespace ShippingApi.Core.Repository
                 }
             }
 
-            public override async Task<Driver?> FindById(int id)
+            public override async Task<Driver?> FindById(int id, CancellationToken cancellationToken = default)
             {
                 try
                 {
                     return await _context.Drivers
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.Id == id);
-
+                        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
                 }
                 catch (Exception e)
                 {

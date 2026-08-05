@@ -18,29 +18,29 @@ namespace ShippingApi.Core.Repository
 
             }
 
-            public virtual async Task<bool> Add(T entity)
+            public virtual async Task<bool> Add(T entity, CancellationToken cancellationToken = default)
             {
-                await _dbSet.AddAsync(entity);
+                await _dbSet.AddAsync(entity, cancellationToken);
                 return true;
             }
 
-            public virtual async Task<IEnumerable<T>> All()
+            public virtual async Task<IEnumerable<T>> All(CancellationToken cancellationToken = default)
             {
-                return await _dbSet.AsNoTracking().ToListAsync();
+                return await _dbSet.AsNoTracking().ToListAsync(cancellationToken);
             }
 
-            public virtual async Task<bool> Delete(T entity)
+            public virtual async Task<bool> Delete(T entity, CancellationToken cancellationToken = default)
             {
                 _dbSet.Remove(entity);
                 return true;
             }
 
-            public virtual async Task<T?> FindById(int id)
+            public virtual async Task<T?> FindById(int id, CancellationToken cancellationToken = default)
             {
-                return await _dbSet.FindAsync(id);
+                return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
             }
 
-            public virtual async Task<bool> Update(T entity)
+            public virtual async Task<bool> Update(T entity, CancellationToken cancellationToken = default)
             {
                 _dbSet.Update(entity);
                 return true;

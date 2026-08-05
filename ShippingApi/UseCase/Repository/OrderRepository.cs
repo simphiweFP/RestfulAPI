@@ -13,41 +13,41 @@ namespace ShippingApi.UseCase.Repository
             _context = context;
         }
 
-        public async Task<IEnumerable<Order>> GetOrdersAsync()
+        public async Task<IEnumerable<Order>> GetOrdersAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Orders
                 .AsNoTracking()
                 .Include(o => o.Items)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<Order?> GetOrderByIdAsync(int orderId)
+        public async Task<Order?> GetOrderByIdAsync(int orderId, CancellationToken cancellationToken = default)
         {
             return await _context.Orders
                 .AsNoTracking()
                 .Include(o => o.Items)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+                .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
         }
 
-        public async Task AddOrderAsync(Order order)
+        public async Task AddOrderAsync(Order order, CancellationToken cancellationToken = default)
         {
             _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task UpdateOrderAsync(Order order)
+        public async Task UpdateOrderAsync(Order order, CancellationToken cancellationToken = default)
         {
             _context.Orders.Update(order);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task DeleteOrderAsync(int orderId)
+        public async Task DeleteOrderAsync(int orderId, CancellationToken cancellationToken = default)
         {
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders.FindAsync(new object[] { orderId }, cancellationToken);
             if (order != null)
             {
                 _context.Orders.Remove(order);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(cancellationToken);
             }
         }
     }

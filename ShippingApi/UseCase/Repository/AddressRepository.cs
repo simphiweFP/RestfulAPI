@@ -9,22 +9,24 @@ namespace ShippingApi.Core.Repository
         public AddressRepository(ApplicationDbContext context, ILogger logger) : base(context,logger) 
         { 
         }
-        public override async Task<IEnumerable<Address>> All()
+        public override async Task<IEnumerable<Address>> All(CancellationToken cancellationToken = default)
         {
             try
             {
-                return await _context.Address.Where(x => x.City == "Durban" || x.City == "Ballito" || x.City == "Pietermarizburg" || x.City == "Empangeni").ToListAsync();
+                return await _context.Address
+                    .Where(x => x.City == "Durban" || x.City == "Ballito" || x.City == "Pietermarizburg" || x.City == "Empangeni")
+                    .ToListAsync(cancellationToken);
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
                 throw;
             }
         }
 
-        public Task<Address?> GetDriverByAddress(string city)
+        public async Task<Address?> GetDriverByAddress(string city, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return await _context.Address.FirstOrDefaultAsync(x => x.City == city, cancellationToken);
         }
     }
 }
