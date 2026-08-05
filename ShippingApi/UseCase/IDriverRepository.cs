@@ -5,6 +5,6 @@ namespace ShippingApi.Core
 {
     public interface IDriverRepository : IGenericRepository<Driver>
     {
-        Task<Driver?> GetDriverByNumber(int driverNumber);
+        Task<Driver?> GetDriverByNumber(int driverNumber, CancellationToken cancellationToken = default);
     }
 }

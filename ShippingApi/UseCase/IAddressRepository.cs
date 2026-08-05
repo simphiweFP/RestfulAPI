@@ -4,6 +4,6 @@ namespace ShippingApi.Core
 {
     public interface IAddressRepository : IGenericRepository<Address>
     {
-        Task<Address?> GetDriverByAddress(string city);
+        Task<Address?> GetDriverByAddress(string city, CancellationToken cancellationToken = default);
     }
 }
