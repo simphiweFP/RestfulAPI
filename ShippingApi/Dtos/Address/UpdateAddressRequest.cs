@@ -4,7 +4,7 @@ namespace ShippingApi.Dtos.Address
 {
     public class UpdateAddressRequest
     {
-        [Required]
+        [Range(1, int.MaxValue)]
         public int Id { get; set; }
 
         [Required]

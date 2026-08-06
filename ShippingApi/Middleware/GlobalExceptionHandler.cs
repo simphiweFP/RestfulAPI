@@ -22,11 +22,11 @@ namespace ShippingApi.Middleware
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled exception occurred while processing request {TraceId}", context.TraceIdentifier);
-                await HandleExceptionAsync(context, ex);
+                await HandleExceptionAsync(context);
             }
         }
 
-        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static async Task HandleExceptionAsync(HttpContext context)
         {
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             context.Response.ContentType = "application/problem+json";
@@ -34,7 +34,7 @@ namespace ShippingApi.Middleware
             var problemDetails = new ProblemDetails
             {
                 Title = "An unexpected error occurred",
-                Detail = exception.Message,
+                Detail = "The server encountered an unexpected error. Use the traceId to report this issue.",
                 Status = StatusCodes.Status500InternalServerError,
                 Instance = context.Request.Path,
                 Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1"

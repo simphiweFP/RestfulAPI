@@ -4,7 +4,6 @@ namespace ShippingApi.Dtos.Order
 {
     public class CreateOrderRequest
     {
-        [Required]
         [Range(1, int.MaxValue)]
         public int UserId { get; set; }
 

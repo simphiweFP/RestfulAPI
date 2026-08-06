@@ -5,7 +5,7 @@ namespace ShippingApi.Dtos.Driver
 {
     public class UpdateDriverRequest
     {
-        [Required]
+        [Range(1, int.MaxValue)]
         public int Id { get; set; }
 
         [Required]
