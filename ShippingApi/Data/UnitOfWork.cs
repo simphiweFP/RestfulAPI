@@ -21,13 +21,13 @@ namespace ShippingApi.Data
             Address = new AddressRepository(_context, logger);
         }
 
-        public async Task CompleteAsync()
+        public async Task CompleteAsync(CancellationToken cancellationToken = default)
         {
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
-        public async Task RunMigrationsAsync()
+        public async Task RunMigrationsAsync(CancellationToken cancellationToken = default)
         {
-             await _context.Database.MigrateAsync();
+             await _context.Database.MigrateAsync(cancellationToken);
         }
         public void Dispose()
         {
