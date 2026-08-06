@@ -1,16 +1,28 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
+using Microsoft.OpenApi.Models;
 using ShippingApi.Core;
 using ShippingApi.Data;
 using ShippingApi.Services;
 using ShippingApi.UseCase;
 using ShippingApi.UseCase.Repository;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!builder.Environment.IsEnvironment("Testing") && string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "The required connection string 'DefaultConnection' is not configured. " +
+        "Provide it through user secrets or an environment-specific configuration source.");
+}
+
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
     {
@@ -36,7 +48,7 @@ builder.Services.AddControllers()
 
 // Add DbContext registration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString));
 
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -49,6 +61,14 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
+builder.Services.AddHealthChecks();
+builder.Services.AddHttpLogging(options =>
+{
+    options.LoggingFields = HttpLoggingFields.RequestMethod |
+                            HttpLoggingFields.RequestPath |
+                            HttpLoggingFields.ResponseStatusCode;
+});
+
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // Order dependencies
@@ -57,22 +77,62 @@ builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<IOrderService>(provider =>
 {
     var orderService = provider.GetRequiredService<OrderService>();
-    return new LoggingServiceDecorator(orderService);
+    var logger = provider.GetRequiredService<ILogger<LoggingServiceDecorator>>();
+    return new LoggingServiceDecorator(orderService, logger);
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ShippingApi",
+        Version = "v1",
+        Description = "A portfolio-ready shipping API with addresses, drivers, and orders."
+    });
+
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    }
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter a valid JWT token using the Bearer scheme."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
-// Create a scope to resolve scoped services
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
+    using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     var unitOfWork = services.GetRequiredService<IUnitOfWork>();
 
-    // Call migrations before running the application
     await unitOfWork.RunMigrationsAsync();
 }
 
@@ -80,10 +140,18 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "ShippingApi v1");
+    });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseHttpLogging();
 
 app.UseMiddleware<ShippingApi.Middleware.GlobalExceptionHandler>();
 
@@ -91,6 +159,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();
+
+public partial class Program
+{
+}
 
