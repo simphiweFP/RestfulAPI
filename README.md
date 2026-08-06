@@ -6,6 +6,18 @@
 
 ShippingApi is a **.NET 7 REST API** for managing **addresses, drivers, and orders**. It is a portfolio-ready backend sample with automated testing, Docker support, CI, health checks, structured logging, pagination, filtering, and Swagger documentation.
 
+## Problem it solves
+
+ShippingApi solves the problem of managing core shipping workflow data in one place. It provides a centralized REST API for creating, updating, validating, filtering, and retrieving driver, address, and order records so other applications and frontend clients can work with shipping data consistently.
+
+In practical terms, it helps replace scattered or manual shipping data handling with a single backend service that supports:
+
+- driver management
+- delivery address management
+- order creation and tracking
+- paginated and filtered queries
+- documented, testable API contracts
+
 ---
 
 ## ✨ Highlights
