@@ -1,6 +1,7 @@
 ﻿using ShippingApi.Models;
 using ShippingApi.Services;
 using ShippingApi.UseCase;
+using ShippingApi.Dtos.Order;
 
 namespace ShippingApi.Services
 {
@@ -39,6 +40,11 @@ namespace ShippingApi.Services
         public async Task<IEnumerable<Order>> GetOrdersAsync(CancellationToken cancellationToken = default)
         {
             return await _orderRepository.GetOrdersAsync(cancellationToken);
+        }
+
+        public async Task<PagedResult<Order>> GetOrdersAsync(OrderQueryParameters queryParameters, CancellationToken cancellationToken = default)
+        {
+            return await _orderRepository.GetOrdersAsync(queryParameters, cancellationToken);
         }
 
         public async Task AddOrderAsync(Order order, CancellationToken cancellationToken = default)

@@ -1,4 +1,5 @@
-﻿using ShippingApi.Models;
+﻿using ShippingApi.Dtos.Order;
+using ShippingApi.Models;
 
 namespace ShippingApi.Services
 {
@@ -8,6 +9,7 @@ namespace ShippingApi.Services
         Task<IEnumerable<Order>> GetUserOrdersAsync(int userId, CancellationToken cancellationToken = default);
         Task<Order?> GetOrderByIdAsync(int id, CancellationToken cancellationToken = default);
         Task<IEnumerable<Order>> GetOrdersAsync(CancellationToken cancellationToken = default);
+        Task<PagedResult<Order>> GetOrdersAsync(OrderQueryParameters queryParameters, CancellationToken cancellationToken = default);
         Task AddOrderAsync(Order order, CancellationToken cancellationToken = default);
         Task UpdateOrderAsync(Order order, CancellationToken cancellationToken = default);
         Task DeleteOrderAsync(int id, CancellationToken cancellationToken = default);
