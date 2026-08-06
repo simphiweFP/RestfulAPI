@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ShippingApi.Data;
 using ShippingApi.Models;
+using ShippingApi.Dtos.Driver;
 
 namespace ShippingApi.Core.Repository
 {
@@ -12,43 +13,51 @@ namespace ShippingApi.Core.Repository
 
             public override async Task<IEnumerable<Driver>> All(CancellationToken cancellationToken = default)
             {
-                try
-                {
-                    return await _context.Drivers.Where(x => x.Id < 100).ToListAsync(cancellationToken);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
+                return await _context.Drivers
+                    .AsNoTracking()
+                    .ToListAsync(cancellationToken);
             }
 
             public async Task<Driver?> GetDriverByNumber(int driverNumber, CancellationToken cancellationToken = default)
             {
-                try
-                {
-                    return await _context.Drivers.FirstOrDefaultAsync(x => x.DriverNumber == driverNumber, cancellationToken);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
+                return await _context.Drivers
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.DriverNumber == driverNumber, cancellationToken);
             }
 
             public override async Task<Driver?> FindById(int id, CancellationToken cancellationToken = default)
             {
-                try
+                return await _context.Drivers
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            }
+
+            public async Task<PagedResult<Driver>> GetDriversAsync(DriverQueryParameters queryParameters, CancellationToken cancellationToken = default)
+            {
+                var query = _context.Drivers
+                    .AsNoTracking()
+                    .Include(driver => driver.Address)
+                    .AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(queryParameters.Team))
                 {
-                    return await _context.Drivers
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+                    query = query.Where(driver => driver.Team == queryParameters.Team);
                 }
-                catch (Exception e)
+
+                if (!string.IsNullOrWhiteSpace(queryParameters.Search))
                 {
-                    Console.WriteLine();
-                    throw;
+                    query = query.Where(driver => driver.Name.Contains(queryParameters.Search) || driver.Email.Contains(queryParameters.Search));
                 }
+
+                var totalCount = await query.CountAsync(cancellationToken);
+                var totalPages = (int)Math.Ceiling(totalCount / (double)queryParameters.PageSize);
+                var items = await query
+                    .OrderBy(driver => driver.Id)
+                    .Skip((queryParameters.PageNumber - 1) * queryParameters.PageSize)
+                    .Take(queryParameters.PageSize)
+                    .ToListAsync(cancellationToken);
+
+                return new PagedResult<Driver>(items, totalCount, queryParameters.PageNumber, queryParameters.PageSize, totalPages);
             }
         }
     }

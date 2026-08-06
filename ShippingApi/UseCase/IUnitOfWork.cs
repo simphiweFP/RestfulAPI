@@ -5,8 +5,8 @@
         IDriverRepository Drivers { get; }
         IAddressRepository Address { get; }
 
-        Task RunMigrationsAsync();
-        Task CompleteAsync();
+        Task RunMigrationsAsync(CancellationToken cancellationToken = default);
+        Task CompleteAsync(CancellationToken cancellationToken = default);
         void Dispose();
     }
 }
